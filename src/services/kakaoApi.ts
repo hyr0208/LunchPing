@@ -1,8 +1,4 @@
-import type {
-  WeeklyBusinessHours,
-  Category,
-  Restaurant,
-} from "../types/restaurant";
+import type { Category, Restaurant } from "../types/restaurant";
 
 const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
 // 프록시를 통해 호출 (CORS 및 도메인 문제 해결용)
@@ -94,27 +90,6 @@ function mapKakaoCategory(categoryName: string): Category {
   return "korean"; // 기본값
 }
 
-// 기본 영업시간 생성 (실제 API에서는 제공하지 않음)
-function generateDefaultBusinessHours(): WeeklyBusinessHours {
-  const defaultHours = { open: "11:00", close: "21:00" };
-  return {
-    monday: defaultHours,
-    tuesday: defaultHours,
-    wednesday: defaultHours,
-    thursday: defaultHours,
-    friday: defaultHours,
-    saturday: { open: "11:00", close: "20:00" },
-    sunday: { open: "11:30", close: "20:00" },
-  };
-}
-
-// 랜덤 평점 생성 (실제 API에서는 평점을 제공하지 않음)
-function generateRating(): { rating: number; reviewCount: number } {
-  const rating = Math.round((3.5 + Math.random() * 1.5) * 10) / 10; // 3.5 ~ 5.0
-  const reviewCount = Math.floor(50 + Math.random() * 500);
-  return { rating, reviewCount };
-}
-
 // 가격대 추정
 function estimatePriceRange(categoryName: string): 1 | 2 | 3 {
   const lowerCategory = categoryName.toLowerCase();
@@ -177,7 +152,6 @@ function getRandomImage(category: Category): string {
 // Kakao 데이터를 Restaurant 타입으로 변환
 function transformToRestaurant(doc: KakaoPlaceDocument): Restaurant {
   const category = mapKakaoCategory(doc.category_name);
-  const { rating, reviewCount } = generateRating();
 
   return {
     id: doc.id,
@@ -186,14 +160,23 @@ function transformToRestaurant(doc: KakaoPlaceDocument): Restaurant {
     description: doc.category_name,
     address: doc.road_address_name || doc.address_name,
     distance: parseInt(doc.distance) || undefined,
-    rating,
-    reviewCount,
+    rating: 0,
+    reviewCount: 0,
     priceRange: estimatePriceRange(doc.category_name),
     imageUrl: getRandomImage(category),
     phoneNumber: doc.phone || undefined,
-    businessHours: generateDefaultBusinessHours(),
+    businessHours: {
+      monday: null,
+      tuesday: null,
+      wednesday: null,
+      thursday: null,
+      friday: null,
+      saturday: null,
+      sunday: null,
+    },
     holidays: [],
     recommendedMenus: [],
+    placeUrl: doc.place_url,
   };
 }
 

@@ -172,5 +172,6 @@ export const mockRestaurants: Restaurant[] = [
       { name: "순대", price: 5000 },
       { name: "김밥", price: 3500, isPopular: true },
     ],
+    placeUrl: "https://map.kakao.com",
   },
 ];
