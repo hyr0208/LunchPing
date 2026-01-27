@@ -3,6 +3,7 @@ import {
   type CategoryInfo,
   type Restaurant,
 } from "../../types/restaurant";
+import { useState, useEffect } from "react";
 import { formatDistance } from "../../utils/timeUtils";
 
 interface RestaurantCardProps {
@@ -18,6 +19,13 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
   );
   const popularMenus = restaurant.recommendedMenus.filter((m) => m.isPopular);
 
+  const [imgSrc, setImgSrc] = useState(restaurant.imageUrl);
+
+  // restaurant prop이 변경되면 이미지도 리셋 (props 변경 대응)
+  useEffect(() => {
+    setImgSrc(restaurant.imageUrl);
+  }, [restaurant.imageUrl]);
+
   const handleOpenMap = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (restaurant.placeUrl) {
@@ -25,16 +33,25 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
     }
   };
 
+  const handleImageError = () => {
+    setImgSrc(
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
+    );
+  };
+
   return (
-    <div className="card p-0 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
-      {/* 이미지 영역 */}
-      <div className="relative h-44 overflow-hidden">
+    <div
+      onClick={handleOpenMap}
+      className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer border border-gray-100 flex flex-col h-full"
+    >
+      <div className="relative h-48 overflow-hidden">
         <img
-          src={restaurant.imageUrl}
+          src={imgSrc}
           alt={restaurant.name}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          onError={handleImageError}
+          className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
 
         {/* 카테고리 */}
         <div className="absolute top-3 right-3">

@@ -70,7 +70,7 @@ export function RecommendationModal({
       />
 
       {/* 모달 컨텐츠 */}
-      <div className="relative bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl transform transition-all animate-bounce-in">
+      <div className="relative bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl transform transition-all duration-300 scale-100">
         {/* 헤더 */}
         <div className="bg-primary-50 p-4 text-center border-b border-primary-100">
           <h3 className="text-lg font-bold text-gray-800">

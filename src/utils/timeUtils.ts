@@ -1,4 +1,4 @@
-import type { WeeklyBusinessHours, OpenStatus } from "../types/restaurant";
+import type { OpenStatus, Restaurant } from "../types/restaurant";
 
 const DAYS_OF_WEEK = [
   "sunday",
@@ -46,7 +46,7 @@ export function isHoliday(holidays: string[]): boolean {
  * 영업 상태 확인
  */
 export function getOpenStatus(
-  businessHours: WeeklyBusinessHours,
+  businessHours: Restaurant["businessHours"],
   holidays: string[],
 ): OpenStatus {
   // 휴무일 체크
@@ -109,7 +109,7 @@ export function getOpenStatusLabel(status: OpenStatus): string {
  * 오늘의 영업 시간 문자열 반환
  */
 export function getTodayBusinessHoursString(
-  businessHours: WeeklyBusinessHours,
+  businessHours: Restaurant["businessHours"],
 ): string {
   const currentDay = getCurrentDayOfWeek();
   const todayHours = businessHours[currentDay];

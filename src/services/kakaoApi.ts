@@ -1,8 +1,4 @@
-import type {
-  WeeklyBusinessHours,
-  Category,
-  Restaurant,
-} from "../types/restaurant";
+import type { Category, Restaurant } from "../types/restaurant";
 
 const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
 // 프록시를 통해 호출 (CORS 및 도메인 문제 해결용)
@@ -164,11 +160,20 @@ function transformToRestaurant(doc: KakaoPlaceDocument): Restaurant {
     description: doc.category_name,
     address: doc.road_address_name || doc.address_name,
     distance: parseInt(doc.distance) || undefined,
-    // rating, reviewCount removed (mock)
+    rating: 0,
+    reviewCount: 0,
     priceRange: estimatePriceRange(doc.category_name),
     imageUrl: getRandomImage(category),
     phoneNumber: doc.phone || undefined,
-    // businessHours removed (mock)
+    businessHours: {
+      monday: null,
+      tuesday: null,
+      wednesday: null,
+      thursday: null,
+      friday: null,
+      saturday: null,
+      sunday: null,
+    },
     holidays: [],
     recommendedMenus: [],
     placeUrl: doc.place_url,

@@ -3,16 +3,6 @@ export interface BusinessHours {
   close: string; // "21:00"
 }
 
-export interface WeeklyBusinessHours {
-  monday: BusinessHours | null;
-  tuesday: BusinessHours | null;
-  wednesday: BusinessHours | null;
-  thursday: BusinessHours | null;
-  friday: BusinessHours | null;
-  saturday: BusinessHours | null;
-  sunday: BusinessHours | null;
-}
-
 export interface Restaurant {
   id: string;
   name: string;
@@ -20,21 +10,28 @@ export interface Restaurant {
   description: string;
   address: string;
   distance?: number; // meters
-  rating?: number;
-  reviewCount?: number;
+  rating: number;
+  reviewCount: number;
   priceRange: 1 | 2 | 3; // $ $$ $$$
   imageUrl: string;
   phoneNumber?: string;
+  placeUrl?: string;
 
   // 영업 정보
-  businessHours?: WeeklyBusinessHours;
+  businessHours: {
+    monday: BusinessHours | null;
+    tuesday: BusinessHours | null;
+    wednesday: BusinessHours | null;
+    thursday: BusinessHours | null;
+    friday: BusinessHours | null;
+    saturday: BusinessHours | null;
+    sunday: BusinessHours | null;
+  };
 
   holidays: string[]; // ["2026-01-01", "2026-01-27"] ISO date strings
 
   // 추천 메뉴
   recommendedMenus: Menu[];
-
-  placeUrl?: string; // New field for Kakao Map link
 }
 
 export interface Menu {

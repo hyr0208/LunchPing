@@ -1,3 +1,4 @@
+// LunchPing App
 import { useState, useMemo } from "react";
 import { Header } from "./components/layout/Header";
 import { CategoryFilter } from "./components/ui/CategoryFilter";
@@ -6,6 +7,7 @@ import { FloatingButton } from "./components/ui/FloatingButton";
 import { RecommendationModal } from "./components/ui/RecommendationModal";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { useRestaurants } from "./hooks/useRestaurants";
+import { getOpenStatus } from "./utils/timeUtils";
 import type { Category, Restaurant } from "./types/restaurant";
 
 function App() {
@@ -32,8 +34,8 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">(
     "all",
   );
-  const [isRecommendationModalOpen, setIsRecommendationModalOpen] =
-    useState(false);
+  const [showOpenOnly, setShowOpenOnly] = useState(false);
+  const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
 
   const filteredRestaurants = useMemo(() => {
     let filtered: Restaurant[] = restaurants;
@@ -43,14 +45,26 @@ function App() {
       filtered = filtered.filter((r) => r.category === selectedCategory);
     }
 
+    // 영업 중인 곳만 필터
+    if (showOpenOnly) {
+      filtered = filtered.filter((r) => {
+        const status = getOpenStatus(r.businessHours, r.holidays);
+        return (
+          status === "open" ||
+          status === "opening-soon" ||
+          status === "closing-soon"
+        );
+      });
+    }
+
     return filtered;
-  }, [restaurants, selectedCategory]);
+  }, [restaurants, selectedCategory, showOpenOnly]);
 
   const isLoading = locationLoading || restaurantsLoading;
   const error = locationError || restaurantsError;
 
   return (
-    <div className="min-h-screen pb-24 relative">
+    <div className="min-h-screen">
       <Header
         loading={locationLoading}
         error={locationError}
@@ -60,9 +74,15 @@ function App() {
       <main className="max-w-6xl mx-auto px-4 py-6">
         {/* 타이틀 섹션 */}
         <section className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            🍴 오늘의 점심 추천
-          </h2>
+          <div className="flex items-end justify-between mb-2">
+            <h2 className="text-2xl font-bold text-gray-800">
+              🍴 오늘의 점심 추천
+            </h2>
+            <FloatingButton
+              onClick={() => setIsRecommendationOpen(true)}
+              disabled={filteredRestaurants.length === 0}
+            />
+          </div>
           <p className="text-gray-500">
             {latitude && longitude
               ? "현재 위치 기준 주변 맛집을 추천해 드려요"
@@ -77,8 +97,21 @@ function App() {
             onCategoryChange={setSelectedCategory}
           />
 
-          {/* 하단 툴바 */}
+          {/* 영업 중 필터 토글 */}
           <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={() => setShowOpenOnly(!showOpenOnly)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
+                ${
+                  showOpenOnly
+                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
+                    : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                }`}
+            >
+              <span>{showOpenOnly ? "✓" : "○"}</span>
+              영업 중인 곳만 보기
+            </button>
+
             <span className="text-sm text-gray-400">
               총 {filteredRestaurants.length}개 음식점
             </span>
@@ -131,7 +164,7 @@ function App() {
                 </div>
 
                 {/* 더보기 버튼 */}
-                {hasMore && selectedCategory === "all" && (
+                {hasMore && selectedCategory === "all" && !showOpenOnly && (
                   <div className="text-center mt-8">
                     <button
                       onClick={loadMore}
@@ -170,14 +203,10 @@ function App() {
         </div>
       </footer>
 
-      {/* 랜덤 추천 플로팅 버튼 & 모달 */}
-      <FloatingButton
-        onClick={() => setIsRecommendationModalOpen(true)}
-        disabled={isLoading || filteredRestaurants.length === 0}
-      />
+      {/* 추천 모달 */}
       <RecommendationModal
-        isOpen={isRecommendationModalOpen}
-        onClose={() => setIsRecommendationModalOpen(false)}
+        isOpen={isRecommendationOpen}
+        onClose={() => setIsRecommendationOpen(false)}
         restaurants={filteredRestaurants}
       />
     </div>
