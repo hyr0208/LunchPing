@@ -20,9 +20,21 @@ export function RecommendationModal({
   const [selectedRestaurant, setSelectedRestaurant] =
     useState<Restaurant | null>(null);
 
+  // 이미 추천된 음식점 ID 추적
+  const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
+
   // 랜덤 선택 로직
   const pickRandom = useCallback(() => {
     if (restaurants.length === 0) return;
+
+    // 아직 추천되지 않은 후보군 추리기
+    let candidates = restaurants.filter((r) => !seenIds.has(r.id));
+
+    // 모든 음식점을 다 봤다면 초기화
+    if (candidates.length === 0) {
+      candidates = restaurants;
+      setSeenIds(new Set());
+    }
 
     setIsShuffling(true);
     setSelectedRestaurant(null);
@@ -31,33 +43,54 @@ export function RecommendationModal({
     let count = 0;
     const maxCount = 20; // 몇 번 바뀔지
     const interval = setInterval(() => {
+      // 셔플 중에는 전체 목록에서 랜덤 표시 (시각적 효과)
       const randomIndex = Math.floor(Math.random() * restaurants.length);
       setDisplayRestaurant(restaurants[randomIndex]);
       count++;
 
       if (count >= maxCount) {
         clearInterval(interval);
-        // 최종 선택
-        const winnerIndex = Math.floor(Math.random() * restaurants.length);
-        const winner = restaurants[winnerIndex];
+        // 최종 선택 (후보군 중에서 선택)
+        const winnerIndex = Math.floor(Math.random() * candidates.length);
+        const winner = candidates[winnerIndex];
+
         setDisplayRestaurant(winner);
         setSelectedRestaurant(winner);
+
+        // 본 목록에 추가
+        setSeenIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.add(winner.id);
+          return newSet;
+        });
+
         setIsShuffling(false);
       }
     }, 100); // 0.1초마다 변경
-  }, [restaurants]);
+  }, [restaurants, seenIds]);
 
   // 모달이 열리면 자동으로 시작
   useEffect(() => {
-    if (isOpen && restaurants.length > 0) {
-      pickRandom();
+    if (isOpen) {
+      if (restaurants.length > 0) {
+        // 모달 열릴 때 초기화하고 시작하시겠습니까?
+        // 아니면 "다시 돌리기"의 연장선인가요?
+        // 보통 모달을 껐다 켜면 새로운 게임으로 인식하는게 자연스러움.
+        setSeenIds(new Set());
+        // pickRandom은 seenIds 의존성이 있으므로,
+        // 여기서 직접 호출하기보다 effect 분리가 나을 수 있으나,
+        // 초기화 직후 실행이 보장되어야 함.
+        // setTimeout으로 실행 순서 보장
+        setTimeout(() => pickRandom(), 0);
+      }
     } else {
-      // 초기화
+      // 닫힐 때 초기화
       setIsShuffling(false);
       setDisplayRestaurant(null);
       setSelectedRestaurant(null);
+      setSeenIds(new Set());
     }
-  }, [isOpen, restaurants, pickRandom]);
+  }, [isOpen]); // restaurants, pickRandom 제거하여 무한 루프 방지 및 의도된 제어
 
   if (!isOpen) return null;
 
