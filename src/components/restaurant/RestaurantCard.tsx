@@ -109,9 +109,9 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
                 ({restaurant.reviewCount})
               </span>
             </div>
-            <span className="text-primary-500 font-medium">
+            {/* <span className="text-primary-500 font-medium">
               {formatPriceRange(restaurant.priceRange)}
-            </span>
+            </span> */}
           </div>
           <span className="text-gray-500 text-sm">{businessHoursString}</span>
         </div>
