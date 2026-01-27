@@ -7,8 +7,6 @@
 
 🔗 **Live Service**: [https://lunchping.yyyerin.co.kr](https://lunchping.yyyerin.co.kr)
 
-![LunchPing Screenshot](/Users/yerin_1/.gemini/antigravity/brain/8b33c0bd-c740-414f-8b2c-b5b85f5c8d97/uploaded_image_1769491940722.png)
-
 ## ✨ 주요 기능
 
 - **📍 내 주변 맛집 찾기**: 사용자 위치 기반 반경 1km 이내 음식점 검색
