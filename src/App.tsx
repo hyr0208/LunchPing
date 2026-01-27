@@ -4,7 +4,6 @@ import { CategoryFilter } from "./components/ui/CategoryFilter";
 import { RestaurantCard } from "./components/restaurant/RestaurantCard";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { useRestaurants } from "./hooks/useRestaurants";
-import { getOpenStatus } from "./utils/timeUtils";
 import type { Category, Restaurant } from "./types/restaurant";
 
 function App() {
@@ -31,7 +30,6 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">(
     "all",
   );
-  const [showOpenOnly, setShowOpenOnly] = useState(false);
 
   const filteredRestaurants = useMemo(() => {
     let filtered: Restaurant[] = restaurants;
@@ -41,20 +39,8 @@ function App() {
       filtered = filtered.filter((r) => r.category === selectedCategory);
     }
 
-    // 영업 중인 곳만 필터
-    if (showOpenOnly) {
-      filtered = filtered.filter((r) => {
-        const status = getOpenStatus(r.businessHours, r.holidays);
-        return (
-          status === "open" ||
-          status === "opening-soon" ||
-          status === "closing-soon"
-        );
-      });
-    }
-
     return filtered;
-  }, [restaurants, selectedCategory, showOpenOnly]);
+  }, [restaurants, selectedCategory]);
 
   const isLoading = locationLoading || restaurantsLoading;
   const error = locationError || restaurantsError;
@@ -87,21 +73,8 @@ function App() {
             onCategoryChange={setSelectedCategory}
           />
 
-          {/* 영업 중 필터 토글 */}
+          {/* 하단 툴바 */}
           <div className="flex items-center gap-3 flex-wrap">
-            <button
-              onClick={() => setShowOpenOnly(!showOpenOnly)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
-                ${
-                  showOpenOnly
-                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
-                    : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-                }`}
-            >
-              <span>{showOpenOnly ? "✓" : "○"}</span>
-              영업 중인 곳만 보기
-            </button>
-
             <span className="text-sm text-gray-400">
               총 {filteredRestaurants.length}개 음식점
             </span>
@@ -154,7 +127,7 @@ function App() {
                 </div>
 
                 {/* 더보기 버튼 */}
-                {hasMore && selectedCategory === "all" && !showOpenOnly && (
+                {hasMore && selectedCategory === "all" && (
                   <div className="text-center mt-8">
                     <button
                       onClick={loadMore}

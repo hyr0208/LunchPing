@@ -20,19 +20,21 @@ export interface Restaurant {
   description: string;
   address: string;
   distance?: number; // meters
-  rating: number;
-  reviewCount: number;
+  rating?: number;
+  reviewCount?: number;
   priceRange: 1 | 2 | 3; // $ $$ $$$
   imageUrl: string;
   phoneNumber?: string;
 
   // 영업 정보
-  businessHours: WeeklyBusinessHours;
+  businessHours?: WeeklyBusinessHours;
 
   holidays: string[]; // ["2026-01-01", "2026-01-27"] ISO date strings
 
   // 추천 메뉴
   recommendedMenus: Menu[];
+
+  placeUrl?: string; // New field for Kakao Map link
 }
 
 export interface Menu {

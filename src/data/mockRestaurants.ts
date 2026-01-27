@@ -29,6 +29,7 @@ export const mockRestaurants: Restaurant[] = [
       { name: "불고기 정식", price: 12000, isPopular: true },
       { name: "제육볶음 정식", price: 10000 },
     ],
+    placeUrl: "https://map.kakao.com",
   },
   {
     id: "2",
@@ -57,6 +58,7 @@ export const mockRestaurants: Restaurant[] = [
       { name: "짬뽕", price: 8000, isPopular: true },
       { name: "탕수육 (중)", price: 18000 },
     ],
+    placeUrl: "https://map.kakao.com",
   },
   {
     id: "3",
