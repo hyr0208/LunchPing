@@ -1,5 +1,5 @@
 // LunchPing App
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Header } from "./components/layout/Header";
 import { CategoryFilter } from "./components/ui/CategoryFilter";
 import { RestaurantCard } from "./components/restaurant/RestaurantCard";
@@ -36,6 +36,8 @@ function App() {
   );
   const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
+  const scrollPositionRef = useRef<number>(0);
+  const previousRestaurantsCountRef = useRef<number>(0);
 
   const filteredRestaurants = useMemo(() => {
     let filtered: Restaurant[] = restaurants;
@@ -59,6 +61,28 @@ function App() {
 
     return filtered;
   }, [restaurants, selectedCategory, showOpenOnly]);
+
+  // 스크롤 위치 복원
+  useEffect(() => {
+    if (
+      restaurants.length > previousRestaurantsCountRef.current &&
+      previousRestaurantsCountRef.current > 0
+    ) {
+      // 데이터가 추가된 경우에만 스크롤 위치 복원
+      window.scrollTo({
+        top: scrollPositionRef.current,
+        behavior: "auto",
+      });
+    }
+    previousRestaurantsCountRef.current = restaurants.length;
+  }, [restaurants.length]);
+
+  // 더보기 버튼 클릭 핸들러
+  const handleLoadMore = () => {
+    // 현재 스크롤 위치 저장
+    scrollPositionRef.current = window.scrollY;
+    loadMore();
+  };
 
   const isLoading = locationLoading || restaurantsLoading;
   const error = locationError || restaurantsError;
@@ -167,7 +191,7 @@ function App() {
                 {hasMore && selectedCategory === "all" && !showOpenOnly && (
                   <div className="text-center mt-8">
                     <button
-                      onClick={loadMore}
+                      onClick={handleLoadMore}
                       disabled={restaurantsLoading}
                       className="bg-white text-gray-700 font-medium py-3 px-8 rounded-xl border border-gray-200 
                                hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
