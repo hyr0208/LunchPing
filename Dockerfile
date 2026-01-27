@@ -1,6 +1,9 @@
 # Build stage
 FROM node:20-alpine AS build
 
+ARG VITE_KAKAO_REST_API_KEY
+ENV VITE_KAKAO_REST_API_KEY=$VITE_KAKAO_REST_API_KEY
+
 WORKDIR /app
 
 # Copy package files

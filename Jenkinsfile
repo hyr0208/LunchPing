@@ -3,6 +3,7 @@ pipeline {
     
     environment {
         DOCKER_IMAGE = 'lunchping'
+        VITE_KAKAO_REST_API_KEY = '68908f9163ef73aac83e9ae94096f936'
     }
     
     stages {
@@ -15,7 +16,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker build -t ${DOCKER_IMAGE}:latest .'
+                    sh 'docker build --build-arg VITE_KAKAO_REST_API_KEY=${VITE_KAKAO_REST_API_KEY} -t ${DOCKER_IMAGE}:latest .'
                 }
             }
         }
