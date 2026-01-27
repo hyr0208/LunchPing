@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { Header } from "./components/layout/Header";
 import { CategoryFilter } from "./components/ui/CategoryFilter";
 import { RestaurantCard } from "./components/restaurant/RestaurantCard";
+import { FloatingButton } from "./components/ui/FloatingButton";
+import { RecommendationModal } from "./components/ui/RecommendationModal";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { useRestaurants } from "./hooks/useRestaurants";
 import type { Category, Restaurant } from "./types/restaurant";
@@ -30,6 +32,8 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">(
     "all",
   );
+  const [isRecommendationModalOpen, setIsRecommendationModalOpen] =
+    useState(false);
 
   const filteredRestaurants = useMemo(() => {
     let filtered: Restaurant[] = restaurants;
@@ -46,7 +50,7 @@ function App() {
   const error = locationError || restaurantsError;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-24 relative">
       <Header
         loading={locationLoading}
         error={locationError}
@@ -165,6 +169,17 @@ function App() {
           <p>© 2026 LunchPing. 맛있는 점심 되세요! 🍱</p>
         </div>
       </footer>
+
+      {/* 랜덤 추천 플로팅 버튼 & 모달 */}
+      <FloatingButton
+        onClick={() => setIsRecommendationModalOpen(true)}
+        disabled={isLoading || filteredRestaurants.length === 0}
+      />
+      <RecommendationModal
+        isOpen={isRecommendationModalOpen}
+        onClose={() => setIsRecommendationModalOpen(false)}
+        restaurants={filteredRestaurants}
+      />
     </div>
   );
 }
