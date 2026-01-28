@@ -72,7 +72,7 @@ export class RestaurantsService {
     }
   }
 
-  // --- Helper Functions (Frontend logic moved here) ---
+  // --- Helper Functions ---
 
   private transformResponse(data: any) {
     return {
@@ -81,7 +81,6 @@ export class RestaurantsService {
     };
   }
 
-  // Arrow function to preserve 'this' if needed, though pure checks are better
   private transformToRestaurant = (doc: any) => {
     const category = this.mapKakaoCategory(doc.category_name);
     return {
@@ -203,5 +202,18 @@ export class RestaurantsService {
     };
     const list = images[category] || images['korean'];
     return list[Math.floor(Math.random() * list.length)];
+  }
+
+  /**
+   * 카테고리 기반 랜덤 이미지 반환 (스크래핑/API 대체)
+   * @param placeUrl - (사용되지 않음) 하위 호환성을 위해 유지
+   * @param fallbackCategory - 카테고리 ('korean', 'western' 등)
+   * @returns 이미지 URL
+   */
+  async getPlaceImage(
+    placeUrl: string,
+    fallbackCategory: string = 'korean',
+  ): Promise<string> {
+    return this.getRandomImage(fallbackCategory);
   }
 }
