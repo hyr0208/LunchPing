@@ -177,6 +177,8 @@ function transformToRestaurant(doc: KakaoPlaceDocument): Restaurant {
     holidays: [],
     recommendedMenus: [],
     placeUrl: doc.place_url,
+    latitude: parseFloat(doc.y),
+    longitude: parseFloat(doc.x),
   };
 }
 

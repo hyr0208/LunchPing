@@ -5,10 +5,13 @@ import { CategoryFilter } from "./components/ui/CategoryFilter";
 import { RestaurantCard } from "./components/restaurant/RestaurantCard";
 import { FloatingButton } from "./components/ui/FloatingButton";
 import { RecommendationModal } from "./components/ui/RecommendationModal";
+import { KakaoMap } from "./components/map/KakaoMap";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { useRestaurants } from "./hooks/useRestaurants";
 import { getOpenStatus } from "./utils/timeUtils";
 import type { Category, Restaurant } from "./types/restaurant";
+
+type ViewMode = "list" | "map";
 
 function App() {
   const {
@@ -36,6 +39,7 @@ function App() {
   );
   const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const scrollPositionRef = useRef<number>(0);
   const previousRestaurantsCountRef = useRef<number>(0);
 
@@ -140,10 +144,34 @@ function App() {
               총 {filteredRestaurants.length}개 음식점
             </span>
 
+            {/* 뷰 전환 버튼 */}
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 ml-auto">
+              <button
+                onClick={() => setViewMode("list")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                  viewMode === "list"
+                    ? "bg-white text-gray-800 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                📋 리스트
+              </button>
+              <button
+                onClick={() => setViewMode("map")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                  viewMode === "map"
+                    ? "bg-white text-gray-800 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                🗺️ 지도
+              </button>
+            </div>
+
             {restaurants.length > 0 && (
               <button
                 onClick={refreshRestaurants}
-                className="ml-auto text-sm text-primary-500 hover:text-primary-600 font-medium"
+                className="text-sm text-primary-500 hover:text-primary-600 font-medium"
               >
                 🔄 새로고침
               </button>
@@ -173,32 +201,43 @@ function App() {
           </div>
         )}
 
-        {/* 음식점 목록 */}
+        {/* 음식점 목록 또는 지도 */}
         {!isLoading && !error && (
           <section>
             {filteredRestaurants.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {filteredRestaurants.map((restaurant) => (
-                    <RestaurantCard
-                      key={restaurant.id}
-                      restaurant={restaurant}
-                    />
-                  ))}
-                </div>
+                {viewMode === "list" ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {filteredRestaurants.map((restaurant) => (
+                        <RestaurantCard
+                          key={restaurant.id}
+                          restaurant={restaurant}
+                        />
+                      ))}
+                    </div>
 
-                {/* 더보기 버튼 */}
-                {hasMore && selectedCategory === "all" && !showOpenOnly && (
-                  <div className="text-center mt-8">
-                    <button
-                      onClick={handleLoadMore}
-                      disabled={restaurantsLoading}
-                      className="bg-white text-gray-700 font-medium py-3 px-8 rounded-xl border border-gray-200 
-                               hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
-                    >
-                      {restaurantsLoading ? "불러오는 중..." : "더 보기"}
-                    </button>
-                  </div>
+                    {/* 더보기 버튼 */}
+                    {hasMore && selectedCategory === "all" && !showOpenOnly && (
+                      <div className="text-center mt-8">
+                        <button
+                          onClick={handleLoadMore}
+                          disabled={restaurantsLoading}
+                          className="bg-white text-gray-700 font-medium py-3 px-8 rounded-xl border border-gray-200 
+                                   hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
+                        >
+                          {restaurantsLoading ? "불러오는 중..." : "더 보기"}
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  /* 지도 뷰 */
+                  <KakaoMap
+                    restaurants={filteredRestaurants}
+                    userLatitude={latitude}
+                    userLongitude={longitude}
+                  />
                 )}
               </>
             ) : (
