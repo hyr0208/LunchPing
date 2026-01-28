@@ -8,6 +8,7 @@ interface KakaoMapProps {
   userLatitude: number | null;
   userLongitude: number | null;
   onRestaurantSelect?: (restaurant: Restaurant | null) => void;
+  onMapMove?: (latitude: number, longitude: number) => void;
 }
 
 export function KakaoMap({
@@ -15,13 +16,20 @@ export function KakaoMap({
   userLatitude,
   userLongitude,
   onRestaurantSelect,
+  onMapMove,
 }: KakaoMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const markersRef = useRef<kakao.maps.Marker[]>([]);
+  const onMapMoveRef = useRef(onMapMove);
   const [selectedRestaurant, setSelectedRestaurant] =
     useState<Restaurant | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
+
+  // onMapMove 콜백 최신 상태 유지
+  useEffect(() => {
+    onMapMoveRef.current = onMapMove;
+  }, [onMapMove]);
 
   // 지도 초기화
   useEffect(() => {
@@ -34,7 +42,21 @@ export function KakaoMap({
         level: 4, // 확대 레벨
       };
 
-      mapRef.current = new window.kakao.maps.Map(container, options);
+      const map = new window.kakao.maps.Map(container, options);
+      mapRef.current = map;
+
+      // 지도 이동 완료 이벤트 (드래그 끝났을 때) - debounce 적용
+      let debounceTimer: ReturnType<typeof setTimeout>;
+      window.kakao.maps.event.addListener(map, "dragend", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          const center = map.getCenter();
+          const lat = center.getLat();
+          const lng = center.getLng();
+          onMapMoveRef.current?.(lat, lng);
+        }, 500); // 500ms 대기 후 검색
+      });
+
       setIsMapReady(true);
     };
 
@@ -134,7 +156,7 @@ export function KakaoMap({
 
       {/* 선택된 음식점 미니 카드 */}
       {selectedRestaurant && (
-        <div className="absolute bottom-4 left-4 right-4 bg-white rounded-xl shadow-xl p-4 animate-slide-up">
+        <div className="absolute bottom-4 left-4 right-4 z-50 bg-white rounded-xl shadow-xl p-4 animate-slide-up">
           <button
             onClick={handleCloseCard}
             className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"

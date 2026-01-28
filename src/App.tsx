@@ -1,5 +1,5 @@
 // LunchPing App
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Header } from "./components/layout/Header";
 import { CategoryFilter } from "./components/ui/CategoryFilter";
 import { RestaurantCard } from "./components/restaurant/RestaurantCard";
@@ -21,6 +21,17 @@ function App() {
     error: locationError,
     refresh: refreshLocation,
   } = useGeolocation();
+
+  // 지도에서 검색할 좌표 (지도 이동 시 업데이트)
+  const [mapSearchCoords, setMapSearchCoords] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  // 검색에 사용할 좌표 (지도 이동 시에는 해당 위치, 아니면 현재 위치)
+  const searchLat = mapSearchCoords?.lat ?? latitude;
+  const searchLng = mapSearchCoords?.lng ?? longitude;
+
   const {
     restaurants,
     loading: restaurantsLoading,
@@ -29,8 +40,8 @@ function App() {
     loadMore,
     refresh: refreshRestaurants,
   } = useRestaurants({
-    latitude,
-    longitude,
+    latitude: searchLat,
+    longitude: searchLng,
     radius: 1000, // 1km 반경
   });
 
@@ -40,6 +51,11 @@ function App() {
   const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+
+  // 지도 이동 시 콜백 (안정적인 참조 유지)
+  const handleMapMove = useCallback((lat: number, lng: number) => {
+    setMapSearchCoords({ lat, lng });
+  }, []);
   const scrollPositionRef = useRef<number>(0);
   const previousRestaurantsCountRef = useRef<number>(0);
 
@@ -237,6 +253,7 @@ function App() {
                     restaurants={filteredRestaurants}
                     userLatitude={latitude}
                     userLongitude={longitude}
+                    onMapMove={handleMapMove}
                   />
                 )}
               </>
