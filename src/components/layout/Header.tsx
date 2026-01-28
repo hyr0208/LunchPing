@@ -1,10 +1,16 @@
 interface HeaderProps {
   loading: boolean;
   error: string | null;
+  address?: string;
   onRefreshLocation?: () => void;
 }
 
-export function Header({ loading, error, onRefreshLocation }: HeaderProps) {
+export function Header({
+  loading,
+  error,
+  address,
+  onRefreshLocation,
+}: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-white/50 shadow-sm">
       <div className="max-w-6xl mx-auto px-4 py-4">
@@ -42,7 +48,9 @@ export function Header({ loading, error, onRefreshLocation }: HeaderProps) {
                 className="flex items-center gap-2 text-gray-600 hover:text-primary-500 transition-colors"
               >
                 <span className="text-lg">📍</span>
-                <span className="text-sm font-medium">내 주변</span>
+                <span className="text-sm font-medium">
+                  {address || "내 주변"}
+                </span>
               </button>
             )}
           </div>

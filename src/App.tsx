@@ -9,6 +9,7 @@ import { KakaoMap } from "./components/map/KakaoMap";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { useRestaurants } from "./hooks/useRestaurants";
 import { getOpenStatus } from "./utils/timeUtils";
+import { getAddressFromCoords } from "./services/kakaoApi";
 import type { Category, Restaurant } from "./types/restaurant";
 
 type ViewMode = "list" | "map";
@@ -51,6 +52,7 @@ function App() {
   const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [currentAddress, setCurrentAddress] = useState<string>("");
 
   // 지도 이동 시 콜백 (안정적인 참조 유지)
   const handleMapMove = useCallback((lat: number, lng: number) => {
@@ -107,11 +109,21 @@ function App() {
   const isLoading = locationLoading || restaurantsLoading;
   const error = locationError || restaurantsError;
 
+  // 현재 위치 주소 가져오기
+  useEffect(() => {
+    if (latitude && longitude) {
+      getAddressFromCoords(latitude, longitude)
+        .then(setCurrentAddress)
+        .catch(() => setCurrentAddress(""));
+    }
+  }, [latitude, longitude]);
+
   return (
     <div className="min-h-screen">
       <Header
         loading={locationLoading}
         error={locationError}
+        address={currentAddress}
         onRefreshLocation={refreshLocation}
       />
 

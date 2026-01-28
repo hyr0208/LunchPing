@@ -257,3 +257,52 @@ export async function searchRestaurantsByKeyword(
   const data: KakaoSearchResponse = await response.json();
   return data.documents.map(transformToRestaurant);
 }
+
+// 좌표 -> 주소 변환 (Reverse Geocoding)
+interface KakaoAddressDocument {
+  region_type: string;
+  address_name: string;
+  region_1depth_name: string; // 시/도
+  region_2depth_name: string; // 구/군
+  region_3depth_name: string; // 동/읍/면
+}
+
+interface KakaoAddressResponse {
+  documents: KakaoAddressDocument[];
+}
+
+export async function getAddressFromCoords(
+  latitude: number,
+  longitude: number,
+): Promise<string> {
+  const queryParams = new URLSearchParams({
+    x: longitude.toString(),
+    y: latitude.toString(),
+  });
+
+  const response = await fetch(
+    `/api/v2/local/geo/coord2regioncode.json?${queryParams}`,
+    {
+      headers: {
+        Authorization: `KakaoAK ${KAKAO_API_KEY}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Kakao API Error: ${response.status}`);
+  }
+
+  const data: KakaoAddressResponse = await response.json();
+
+  // 행정동 정보 우선, 없으면 법정동
+  const region =
+    data.documents.find((doc) => doc.region_type === "H") || data.documents[0];
+
+  if (!region) {
+    return "위치 정보 없음";
+  }
+
+  // 간단한 주소 형태로 반환 (구/군 + 동)
+  return `${region.region_2depth_name} ${region.region_3depth_name}`.trim();
+}
