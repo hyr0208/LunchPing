@@ -16,6 +16,8 @@ export interface Restaurant {
   imageUrl: string;
   phoneNumber?: string;
   placeUrl?: string;
+  latitude?: number;
+  longitude?: number;
 
   // 영업 정보
   businessHours: {
