@@ -34,4 +34,16 @@ export class RestaurantsController {
       radius ? parseInt(radius) : undefined,
     );
   }
+
+  @Get('image')
+  async getImage(
+    @Query('placeUrl') placeUrl: string,
+    @Query('category') category?: string,
+  ) {
+    const imageUrl = await this.restaurantsService.getPlaceImage(
+      placeUrl,
+      category,
+    );
+    return { imageUrl };
+  }
 }

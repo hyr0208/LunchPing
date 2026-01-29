@@ -42,13 +42,20 @@ export function useRestaurants({
           pageNum,
         );
 
-        setState((prev) => ({
-          restaurants:
-            pageNum === 1 ? restaurants : [...prev.restaurants, ...restaurants],
-          loading: false,
-          error: null,
-          hasMore,
-        }));
+        setState((prev) => {
+          // 새 식당 데이터를 기존 데이터에 병합 (중복 제거)
+          const existingIds = new Set(prev.restaurants.map((r) => r.id));
+          const newRestaurants = restaurants.filter(
+            (r) => !existingIds.has(r.id),
+          );
+
+          return {
+            restaurants: [...prev.restaurants, ...newRestaurants],
+            loading: false,
+            error: null,
+            hasMore,
+          };
+        });
       } catch (error) {
         setState((prev) => ({
           ...prev,
@@ -80,6 +87,8 @@ export function useRestaurants({
   }, [page, state.loading, state.hasMore, fetchRestaurants]);
 
   const refresh = useCallback(() => {
+    // 명시적 새로고침 시 기존 데이터 초기화
+    setState((prev) => ({ ...prev, restaurants: [] }));
     setPage(1);
     fetchRestaurants(1);
   }, [fetchRestaurants]);

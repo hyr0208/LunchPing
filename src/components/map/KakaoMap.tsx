@@ -20,11 +20,13 @@ export function KakaoMap({
 }: KakaoMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map | null>(null);
-  const markersRef = useRef<kakao.maps.Marker[]>([]);
+  // 마커를 식당 ID로 관리하는 Map (기존 마커 유지를 위함)
+  const markersMapRef = useRef<Map<string, kakao.maps.Marker>>(new Map());
   const onMapMoveRef = useRef(onMapMove);
   const [selectedRestaurant, setSelectedRestaurant] =
     useState<Restaurant | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
+  const isInitialLoadRef = useRef(true);
 
   // onMapMove 콜백 최신 상태 유지
   useEffect(() => {
@@ -73,17 +75,18 @@ export function KakaoMap({
     waitForKakaoAndInit();
   }, [userLatitude, userLongitude]);
 
-  // 마커 생성 및 업데이트
+  // 마커 생성 및 업데이트 (점진적 추가 방식)
   useEffect(() => {
     if (!isMapReady || !mapRef.current) return;
 
-    // 기존 마커 제거
-    markersRef.current.forEach((marker) => marker.setMap(null));
-    markersRef.current = [];
+    const currentMarkers = markersMapRef.current;
 
-    // 새 마커 생성
+    // 새 마커만 추가 (이미 있는 마커는 건너뜀)
     restaurants.forEach((restaurant) => {
       if (!restaurant.latitude || !restaurant.longitude) return;
+
+      // 이미 마커가 있으면 건너뜀
+      if (currentMarkers.has(restaurant.id)) return;
 
       const position = new window.kakao.maps.LatLng(
         restaurant.latitude,
@@ -102,11 +105,17 @@ export function KakaoMap({
         mapRef.current?.panTo(position);
       });
 
-      markersRef.current.push(marker);
+      // Map에 마커 저장
+      currentMarkers.set(restaurant.id, marker);
     });
 
-    // 지도 범위 조정 (마커가 모두 보이도록)
-    if (restaurants.length > 0 && userLatitude && userLongitude) {
+    // 최초 로드 시에만 지도 범위 조정
+    if (
+      isInitialLoadRef.current &&
+      restaurants.length > 0 &&
+      userLatitude &&
+      userLongitude
+    ) {
       const bounds = new window.kakao.maps.LatLngBounds();
       bounds.extend(new window.kakao.maps.LatLng(userLatitude, userLongitude));
       restaurants.forEach((r) => {
@@ -115,6 +124,7 @@ export function KakaoMap({
         }
       });
       mapRef.current?.setBounds(bounds);
+      isInitialLoadRef.current = false;
     }
   }, [
     isMapReady,

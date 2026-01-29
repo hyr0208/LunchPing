@@ -207,34 +207,53 @@ function App() {
           </div>
         </section>
 
-        {/* 로딩 상태 */}
-        {isLoading && restaurants.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-500">주변 맛집을 찾고 있어요...</p>
-          </div>
-        )}
-
-        {/* 에러 상태 */}
-        {error && !isLoading && restaurants.length === 0 && (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">😢</div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              음식점을 불러올 수 없어요
-            </h3>
-            <p className="text-gray-500 mb-4">{error}</p>
-            <button onClick={refreshLocation} className="btn-primary">
-              다시 시도하기
-            </button>
-          </div>
-        )}
-
         {/* 음식점 목록 또는 지도 */}
-        {!isLoading && !error && (
-          <section>
-            {filteredRestaurants.length > 0 ? (
-              <>
-                {viewMode === "list" ? (
+        {viewMode === "map" ? (
+          /* 지도 뷰 - 로딩 중에도 지도 유지 */
+          <section className="relative">
+            <KakaoMap
+              restaurants={filteredRestaurants}
+              userLatitude={latitude}
+              userLongitude={longitude}
+              onMapMove={handleMapMove}
+            />
+            {/* 지도 위 로딩 인디케이터 */}
+            {restaurantsLoading && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2 z-10">
+                <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-gray-600">검색 중...</span>
+              </div>
+            )}
+          </section>
+        ) : (
+          /* 리스트 뷰 */
+          <>
+            {/* 로딩 상태 - 첫 로딩 시에만 */}
+            {isLoading && restaurants.length === 0 && (
+              <div className="text-center py-16">
+                <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-gray-500">주변 맛집을 찾고 있어요...</p>
+              </div>
+            )}
+
+            {/* 에러 상태 */}
+            {error && !isLoading && restaurants.length === 0 && (
+              <div className="text-center py-16">
+                <div className="text-6xl mb-4">😢</div>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                  음식점을 불러올 수 없어요
+                </h3>
+                <p className="text-gray-500 mb-4">{error}</p>
+                <button onClick={refreshLocation} className="btn-primary">
+                  다시 시도하기
+                </button>
+              </div>
+            )}
+
+            {/* 음식점 리스트 */}
+            {!error && (restaurants.length > 0 || !isLoading) && (
+              <section>
+                {filteredRestaurants.length > 0 ? (
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                       {filteredRestaurants.map((restaurant) => (
@@ -260,31 +279,23 @@ function App() {
                     )}
                   </>
                 ) : (
-                  /* 지도 뷰 */
-                  <KakaoMap
-                    restaurants={filteredRestaurants}
-                    userLatitude={latitude}
-                    userLongitude={longitude}
-                    onMapMove={handleMapMove}
-                  />
+                  <div className="text-center py-16">
+                    <div className="text-6xl mb-4">🍽️</div>
+                    <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                      {restaurants.length === 0
+                        ? "주변에 음식점이 없어요"
+                        : "조건에 맞는 음식점이 없어요"}
+                    </h3>
+                    <p className="text-gray-500">
+                      {restaurants.length === 0
+                        ? "검색 반경을 넓혀보세요"
+                        : "다른 카테고리를 선택하거나 필터를 조정해 보세요"}
+                    </p>
+                  </div>
                 )}
-              </>
-            ) : (
-              <div className="text-center py-16">
-                <div className="text-6xl mb-4">🍽️</div>
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                  {restaurants.length === 0
-                    ? "주변에 음식점이 없어요"
-                    : "조건에 맞는 음식점이 없어요"}
-                </h3>
-                <p className="text-gray-500">
-                  {restaurants.length === 0
-                    ? "검색 반경을 넓혀보세요"
-                    : "다른 카테고리를 선택하거나 필터를 조정해 보세요"}
-                </p>
-              </div>
+              </section>
             )}
-          </section>
+          </>
         )}
       </main>
 
