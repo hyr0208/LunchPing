@@ -23,6 +23,7 @@ export function KakaoMap({
   // 마커를 식당 ID로 관리하는 Map (기존 마커 유지를 위함)
   const markersMapRef = useRef<Map<string, kakao.maps.Marker>>(new Map());
   const onMapMoveRef = useRef(onMapMove);
+  const restaurantsRef = useRef<Restaurant[]>(restaurants);
   const [selectedRestaurant, setSelectedRestaurant] =
     useState<Restaurant | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
@@ -32,6 +33,11 @@ export function KakaoMap({
   useEffect(() => {
     onMapMoveRef.current = onMapMove;
   }, [onMapMove]);
+
+  // restaurants 최신 상태 유지 (마커 클릭 시 최신 이미지 사용)
+  useEffect(() => {
+    restaurantsRef.current = restaurants;
+  }, [restaurants]);
 
   // 지도 초기화
   useEffect(() => {
@@ -98,10 +104,13 @@ export function KakaoMap({
         map: mapRef.current!,
       });
 
-      // 마커 클릭 이벤트
+      // 마커 클릭 이벤트 — restaurantsRef로 최신 데이터 사용
       window.kakao.maps.event.addListener(marker, "click", () => {
-        setSelectedRestaurant(restaurant);
-        onRestaurantSelect?.(restaurant);
+        const latest =
+          restaurantsRef.current.find((r) => r.id === restaurant.id) ||
+          restaurant;
+        setSelectedRestaurant(latest);
+        onRestaurantSelect?.(latest);
         mapRef.current?.panTo(position);
       });
 
