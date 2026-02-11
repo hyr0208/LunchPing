@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { Restaurant } from "../types/restaurant";
 import {
   searchNearbyRestaurants,
+  searchRestaurantsByKeyword,
   enrichRestaurantImages,
 } from "../services/kakaoApi";
 
@@ -16,12 +17,14 @@ interface UseRestaurantsOptions {
   latitude: number | null;
   longitude: number | null;
   radius?: number;
+  keyword?: string;
 }
 
 export function useRestaurants({
   latitude,
   longitude,
   radius = 1000,
+  keyword,
 }: UseRestaurantsOptions) {
   const [state, setState] = useState<UseRestaurantsState>({
     restaurants: [],
@@ -38,27 +41,54 @@ export function useRestaurants({
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
       try {
-        const { restaurants, hasMore } = await searchNearbyRestaurants(
-          latitude,
-          longitude,
-          radius,
-          pageNum,
-        );
+        let restaurants: Restaurant[];
+        let hasMore = false;
+
+        if (keyword) {
+          // 키워드 검색 (반경 2km)
+          restaurants = await searchRestaurantsByKeyword(
+            keyword,
+            latitude,
+            longitude,
+            2000,
+          );
+        } else {
+          // 근처 음식점 검색
+          const result = await searchNearbyRestaurants(
+            latitude,
+            longitude,
+            radius,
+            pageNum,
+          );
+          restaurants = result.restaurants;
+          hasMore = result.hasMore;
+        }
 
         // 먼저 기본 이미지로 식당 목록 표시
-        setState((prev) => {
-          const existingIds = new Set(prev.restaurants.map((r) => r.id));
-          const newRestaurants = restaurants.filter(
-            (r) => !existingIds.has(r.id),
-          );
-
-          return {
-            restaurants: [...prev.restaurants, ...newRestaurants],
+        if (keyword) {
+          // 키워드 검색: 결과 전체 교체
+          setState({
+            restaurants,
             loading: false,
             error: null,
-            hasMore,
-          };
-        });
+            hasMore: false,
+          });
+        } else {
+          // 근처 검색: 페이지 추가 (중복 제거)
+          setState((prev) => {
+            const existingIds = new Set(prev.restaurants.map((r) => r.id));
+            const newRestaurants = restaurants.filter(
+              (r) => !existingIds.has(r.id),
+            );
+
+            return {
+              restaurants: [...prev.restaurants, ...newRestaurants],
+              loading: false,
+              error: null,
+              hasMore,
+            };
+          });
+        }
 
         // 백그라운드로 실제 이미지 보강 (Google Places API + Supabase 캐시)
         enrichRestaurantImages(restaurants).then((enriched) => {
@@ -83,12 +113,14 @@ export function useRestaurants({
         }));
       }
     },
-    [latitude, longitude, radius],
+    [latitude, longitude, radius, keyword],
   );
 
-  // 위치가 변경되면 다시 조회
+  // 위치 또는 키워드가 변경되면 다시 조회
   useEffect(() => {
     if (latitude && longitude) {
+      // 키워드 변경 시 기존 결과 초기화
+      setState((prev) => ({ ...prev, restaurants: [] }));
       setPage(1);
       fetchRestaurants(1);
     }

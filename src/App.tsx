@@ -2,6 +2,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Header } from "./components/layout/Header";
 import { CategoryFilter } from "./components/ui/CategoryFilter";
+import { SearchBar } from "./components/ui/SearchBar";
 import { RestaurantCard } from "./components/restaurant/RestaurantCard";
 import { FloatingButton } from "./components/ui/FloatingButton";
 import { RecommendationModal } from "./components/ui/RecommendationModal";
@@ -20,6 +21,7 @@ function App() {
     longitude,
     loading: locationLoading,
     error: locationError,
+    isDefaultLocation,
     refresh: refreshLocation,
   } = useGeolocation();
 
@@ -33,6 +35,8 @@ function App() {
   const searchLat = mapSearchCoords?.lat ?? latitude;
   const searchLng = mapSearchCoords?.lng ?? longitude;
 
+  const [searchKeyword, setSearchKeyword] = useState("");
+
   const {
     restaurants,
     loading: restaurantsLoading,
@@ -44,6 +48,7 @@ function App() {
     latitude: searchLat,
     longitude: searchLng,
     radius: 1000, // 1km 반경
+    keyword: searchKeyword || undefined,
   });
 
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">(
@@ -107,7 +112,8 @@ function App() {
   };
 
   const isLoading = locationLoading || restaurantsLoading;
-  const error = locationError || restaurantsError;
+  // 기본 위치 사용 중이면 locationError는 에러가 아님
+  const error = (isDefaultLocation ? null : locationError) || restaurantsError;
 
   // 현재 위치 주소 가져오기
   useEffect(() => {
@@ -128,6 +134,27 @@ function App() {
       />
 
       <main className="max-w-6xl mx-auto px-4 py-6">
+        {/* 기본 위치 사용 안내 배너 */}
+        {isDefaultLocation && (
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3">
+            <span className="text-xl">📍</span>
+            <div className="flex-1">
+              <p className="text-sm text-amber-800 font-medium">
+                서울 시청 기준으로 검색 중이에요
+              </p>
+              <p className="text-xs text-amber-600">
+                위치 권한을 허용하면 내 주변 맛집을 찾을 수 있어요
+              </p>
+            </div>
+            <button
+              onClick={refreshLocation}
+              className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 px-3 py-1.5 rounded-lg transition-colors font-medium"
+            >
+              위치 허용
+            </button>
+          </div>
+        )}
+
         {/* 타이틀 섹션 */}
         <section className="mb-6">
           <div className="flex items-end justify-between mb-2">
@@ -140,10 +167,15 @@ function App() {
             />
           </div>
           <p className="text-gray-500">
-            {latitude && longitude
-              ? "현재 위치 기준 주변 맛집을 추천해 드려요"
-              : "위치 정보를 허용하면 주변 맛집을 추천해 드려요"}
+            {isDefaultLocation
+              ? "서울 시청 주변 맛집을 보여드려요. 지도를 이동해서 다른 지역도 검색해보세요!"
+              : "현재 위치 기준 주변 맛집을 추천해 드려요"}
           </p>
+        </section>
+
+        {/* 검색 섹션 */}
+        <section className="mb-4">
+          <SearchBar value={searchKeyword} onChange={setSearchKeyword} />
         </section>
 
         {/* 필터 섹션 */}
