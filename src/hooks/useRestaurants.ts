@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Restaurant } from "../types/restaurant";
-import { searchNearbyRestaurants } from "../services/kakaoApi";
+import {
+  searchNearbyRestaurants,
+  enrichRestaurantImages,
+} from "../services/kakaoApi";
 
 interface UseRestaurantsState {
   restaurants: Restaurant[];
@@ -42,8 +45,8 @@ export function useRestaurants({
           pageNum,
         );
 
+        // 먼저 기본 이미지로 식당 목록 표시
         setState((prev) => {
-          // 새 식당 데이터를 기존 데이터에 병합 (중복 제거)
           const existingIds = new Set(prev.restaurants.map((r) => r.id));
           const newRestaurants = restaurants.filter(
             (r) => !existingIds.has(r.id),
@@ -55,6 +58,19 @@ export function useRestaurants({
             error: null,
             hasMore,
           };
+        });
+
+        // 백그라운드로 실제 이미지 보강 (Google Places API + Supabase 캐시)
+        enrichRestaurantImages(restaurants).then((enriched) => {
+          setState((prev) => ({
+            ...prev,
+            restaurants: prev.restaurants.map((r) => {
+              const updated = enriched.find((e) => e.id === r.id);
+              return updated && updated.imageUrl !== r.imageUrl
+                ? { ...r, imageUrl: updated.imageUrl }
+                : r;
+            }),
+          }));
         });
       } catch (error) {
         setState((prev) => ({

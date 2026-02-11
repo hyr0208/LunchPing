@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
+import { ImageCacheService } from './image-cache.service';
 
 @Injectable()
 export class RestaurantsService {
@@ -10,6 +11,7 @@ export class RestaurantsService {
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly imageCacheService: ImageCacheService,
   ) {}
 
   private get headers() {
@@ -39,7 +41,16 @@ export class RestaurantsService {
           },
         }),
       );
-      return this.transformResponse(data);
+
+      const restaurants = data.documents.map(this.transformToRestaurant);
+
+      // Google Places API로 실제 이미지 보강
+      const enriched = await this.enrichWithImages(restaurants);
+
+      return {
+        restaurants: enriched,
+        hasMore: !data.meta.is_end,
+      };
     } catch (error) {
       throw new InternalServerErrorException('Kakao API Call Failed');
     }
@@ -57,7 +68,7 @@ export class RestaurantsService {
           headers: this.headers,
           params: {
             query: keyword,
-            category_group_code: 'FD6', // 음식점 필터
+            category_group_code: 'FD6',
             x: longitude.toString(),
             y: latitude.toString(),
             radius: radius.toString(),
@@ -66,20 +77,37 @@ export class RestaurantsService {
           },
         }),
       );
-      return data.documents.map(this.transformToRestaurant);
+
+      const restaurants = data.documents.map(this.transformToRestaurant);
+      return this.enrichWithImages(restaurants);
     } catch (error) {
       throw new InternalServerErrorException('Kakao API Search Failed');
     }
   }
 
-  // --- Helper Functions ---
+  // --- 이미지 보강 ---
 
-  private transformResponse(data: any) {
-    return {
-      restaurants: data.documents.map(this.transformToRestaurant),
-      hasMore: !data.meta.is_end,
-    };
+  /**
+   * 식당 목록에 Google Places 이미지를 병렬로 보강합니다.
+   * 캐시에 있으면 캐시 사용, 없으면 Google API 호출 후 캐싱.
+   * 실패 시 기존 카테고리 기본 이미지 유지.
+   */
+  private async enrichWithImages(restaurants: any[]): Promise<any[]> {
+    const imageMap = await this.imageCacheService.getImagesForRestaurants(
+      restaurants.map((r) => ({
+        id: r.id,
+        name: r.name,
+        category: r.category,
+      })),
+    );
+
+    return restaurants.map((restaurant) => ({
+      ...restaurant,
+      imageUrl: imageMap.get(restaurant.id) || restaurant.imageUrl,
+    }));
   }
+
+  // --- Helper Functions ---
 
   private transformToRestaurant = (doc: any) => {
     const category = this.mapKakaoCategory(doc.category_name);
@@ -93,7 +121,7 @@ export class RestaurantsService {
       rating: 0,
       reviewCount: 0,
       priceRange: this.estimatePriceRange(doc.category_name),
-      imageUrl: this.getRandomImage(category),
+      imageUrl: this.getRandomImage(category), // 기본 이미지 (fallback)
       phoneNumber: doc.phone || undefined,
       businessHours: {
         monday: null,
@@ -206,9 +234,6 @@ export class RestaurantsService {
 
   /**
    * 카테고리 기반 랜덤 이미지 반환 (스크래핑/API 대체)
-   * @param placeUrl - (사용되지 않음) 하위 호환성을 위해 유지
-   * @param fallbackCategory - 카테고리 ('korean', 'western' 등)
-   * @returns 이미지 URL
    */
   async getPlaceImage(
     placeUrl: string,
