@@ -3,7 +3,9 @@ pipeline {
     
     environment {
         DOCKER_IMAGE = 'lunchping'
+        BACKEND_IMAGE = 'lunchping-backend'
         VITE_KAKAO_REST_API_KEY = '68908f9163ef73aac83e9ae94096f936'
+        DOCKER_NETWORK = 'lunchping-net'
     }
     
     stages {
@@ -12,11 +14,22 @@ pipeline {
                 checkout scm
             }
         }
-        
-        stage('Build Docker Image') {
+
+        stage('Setup Network') {
             steps {
                 script {
+                    sh 'docker network create ${DOCKER_NETWORK} || true'
+                }
+            }
+        }
+        
+        stage('Build Docker Images') {
+            steps {
+                script {
+                    // Frontend
                     sh 'docker build --build-arg VITE_KAKAO_REST_API_KEY=${VITE_KAKAO_REST_API_KEY} -t ${DOCKER_IMAGE}:latest .'
+                    // Backend
+                    sh 'docker build -t ${BACKEND_IMAGE}:latest ./backend'
                 }
             }
         }
@@ -24,14 +37,30 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    // Stop existing container
-                    sh 'docker stop lunchping || true'
-                    sh 'docker rm lunchping || true'
+                    // Stop existing containers
+                    sh 'docker stop lunchping lunchping-backend || true'
+                    sh 'docker rm lunchping lunchping-backend || true'
+
+                    // Run backend container
+                    sh '''
+                        docker run -d \
+                            --name lunchping-backend \
+                            --network ${DOCKER_NETWORK} \
+                            --restart unless-stopped \
+                            -e DB_HOST=aws-1-ap-northeast-2.pooler.supabase.com \
+                            -e DB_PORT=5432 \
+                            -e DB_USERNAME=postgres.sufdhcqeqsggecmatreg \
+                            -e DB_PASSWORD=diflsdl5490! \
+                            -e DB_DATABASE=postgres \
+                            -e GOOGLE_PLACES_API_KEY=AIzaSyDxj7jSpd1Dx-e380wR_m71c4wWqIDdfm0 \
+                            ${BACKEND_IMAGE}:latest
+                    '''
                     
-                    // Run new container (without custom network)
+                    // Run frontend container
                     sh '''
                         docker run -d \
                             --name lunchping \
+                            --network ${DOCKER_NETWORK} \
                             --restart unless-stopped \
                             -p 3004:80 \
                             ${DOCKER_IMAGE}:latest

@@ -1,6 +1,30 @@
 version: "3.8"
 
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_KAKAO_REST_API_KEY: ${VITE_KAKAO_REST_API_KEY}
+    container_name: lunchping-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lunchping-backend
+    env_file:
+      - ./backend/.env
+    expose:
+      - "3000"
+    restart: unless-stopped
+
   minio:
     image: minio/minio
     container_name: lunchping-minio

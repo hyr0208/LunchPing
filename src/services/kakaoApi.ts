@@ -306,3 +306,39 @@ export async function getAddressFromCoords(
   // 간단한 주소 형태로 반환 (구/군 + 동)
   return `${region.region_2depth_name} ${region.region_3depth_name}`.trim();
 }
+
+/**
+ * 식당 목록의 이미지를 백엔드(Google Places API + Supabase 캐시)로 보강합니다.
+ * 실패해도 기존 이미지를 유지합니다.
+ */
+export async function enrichRestaurantImages(
+  restaurants: Restaurant[],
+): Promise<Restaurant[]> {
+  if (restaurants.length === 0) return restaurants;
+
+  try {
+    const response = await fetch("/backend/restaurants/images", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        restaurants: restaurants.map((r) => ({
+          id: r.id,
+          name: r.name,
+          category: r.category,
+        })),
+      }),
+    });
+
+    if (!response.ok) return restaurants;
+
+    const imageMap: Record<string, string> = await response.json();
+
+    return restaurants.map((r) => ({
+      ...r,
+      imageUrl: imageMap[r.id] || r.imageUrl,
+    }));
+  } catch {
+    // 백엔드 연결 실패 시 기존 이미지 유지
+    return restaurants;
+  }
+}

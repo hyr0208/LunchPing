@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
 
+// 기본 위치: 서울 시청 (위치 권한 거부 시 폴백)
+const DEFAULT_LATITUDE = 37.5666805;
+const DEFAULT_LONGITUDE = 126.9784147;
+
 interface GeolocationState {
   latitude: number | null;
   longitude: number | null;
   error: string | null;
   loading: boolean;
+  isDefaultLocation: boolean; // 기본 위치 사용 여부
 }
 
 export function useGeolocation() {
@@ -13,15 +18,19 @@ export function useGeolocation() {
     longitude: null,
     error: null,
     loading: true,
+    isDefaultLocation: false,
   });
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setState((prev) => ({
-        ...prev,
-        error: "이 브라우저에서는 위치 서비스를 지원하지 않습니다.",
+      // 지오로케이션 미지원 → 기본 위치 사용
+      setState({
+        latitude: DEFAULT_LATITUDE,
+        longitude: DEFAULT_LONGITUDE,
+        error: null,
         loading: false,
-      }));
+        isDefaultLocation: true,
+      });
       return;
     }
 
@@ -31,32 +40,19 @@ export function useGeolocation() {
         longitude: position.coords.longitude,
         error: null,
         loading: false,
+        isDefaultLocation: false,
       });
     };
 
-    const errorHandler = (error: GeolocationPositionError) => {
-      let errorMessage: string;
-
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          errorMessage =
-            "위치 접근 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.";
-          break;
-        case error.POSITION_UNAVAILABLE:
-          errorMessage = "위치 정보를 가져올 수 없습니다.";
-          break;
-        case error.TIMEOUT:
-          errorMessage = "위치 정보 요청 시간이 초과되었습니다.";
-          break;
-        default:
-          errorMessage = "위치 정보를 가져오는 중 오류가 발생했습니다.";
-      }
-
-      setState((prev) => ({
-        ...prev,
-        error: errorMessage,
+    const errorHandler = () => {
+      // 위치 권한 거부/실패 → 기본 위치(서울 시청)로 폴백
+      setState({
+        latitude: DEFAULT_LATITUDE,
+        longitude: DEFAULT_LONGITUDE,
+        error: "위치 권한이 없어 서울 시청 기준으로 검색합니다.",
         loading: false,
-      }));
+        isDefaultLocation: true,
+      });
     };
 
     const options: PositionOptions = {
@@ -82,14 +78,17 @@ export function useGeolocation() {
           longitude: position.coords.longitude,
           error: null,
           loading: false,
+          isDefaultLocation: false,
         });
       },
-      (error) => {
-        setState((prev) => ({
-          ...prev,
-          error: error.message,
+      () => {
+        setState({
+          latitude: DEFAULT_LATITUDE,
+          longitude: DEFAULT_LONGITUDE,
+          error: "위치 권한이 없어 서울 시청 기준으로 검색합니다.",
           loading: false,
-        }));
+          isDefaultLocation: true,
+        });
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
