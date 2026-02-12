@@ -335,6 +335,7 @@ function App() {
       <footer className="mt-12 py-6 border-t border-gray-100">
         <div className="max-w-6xl mx-auto px-4 text-center text-sm text-gray-400">
           <p>© 2026 LunchPing. 맛있는 점심 되세요! 🍱</p>
+          <p className="mt-1">Made with ❤️ by yyyerin</p>
         </div>
       </footer>
 
